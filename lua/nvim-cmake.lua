@@ -1,24 +1,61 @@
 
 local build_dir = 'build'
+local current_dir = "."
+local target = "main"
+
+
 local cmd = vim.cmd
 local call = vim.api.nvim_call_function
-local exec = vim.fn.system
+local exec = vim.fn.systemlist
+local luv = vim.loop
 
---cmake -S /home/kevin/workspace/c_test -B /home/kevin/workspace/c_test/build
-local function run()
-    local prog = '!./'..build_dir
-    prog = prog..'/main'
+
+-- print string
+local function echo(str)
+    if type(str) == "string" then
+        cmd("echo '"..str.."'")
+    else
+        for k,v in ipairs(str) do 
+            cmd("echo '"..v.."'")
+        end
+    end
+end
+
+-- Running Target 
+local function run(result)
+    local mTarget = nil
+    for k,v in pairs(result) do
+        local a,b = string.find(v,"Built target")
+        if a ~= nil then 
+            mTarget = string.sub(v,b+2)
+        end
+    end
+    local prog = '!./'..build_dir.."/"..mTarget
     cmd(prog)
 end
 
+-- Find Build directory
+local function checkCMakeList()
+    if  luv.fs_access("CMakeLists.txt","r") ~= true then
+        echo("CMakeLIst.txt is not exist")
+        return false
+    end
+    return true
+end
+
+-- Build Target
 local function build()
+    if not checkCMakeList() then
+        return
+    end
+
     local para = 'cmake -S . '..'-B '..build_dir
     local result = exec(para)
-    cmd('echo "'..result..'"')
+    echo(result)
     para = 'cmake --build '..'./'..build_dir .. ' --target all'
     result = exec(para)
-    cmd('echo "'..result..'"')
-    run()
+    echo(result)
+    run(result)
 end
 
 
